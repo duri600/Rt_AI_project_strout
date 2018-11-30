@@ -493,7 +493,7 @@ int ProcBuffers::Process(double**input, double**test2_48k)
 				//frame마다 ch별 output stdout출력 2018.11.30
 				for ( i = 0; i < NBufferSize; i++)
 				{
-					cout << i << "frame : " << "ch1 = " << nmf_out[0][i] << " ch2 = " << nmf_out[1][i] << endl;
+					cout << i << "sample : " << "ch1 = " << nmf_out[0][i] << " ch2 = " << nmf_out[1][i] << endl;
 				}
 				
 				//Upsampling 16k -> 48k
