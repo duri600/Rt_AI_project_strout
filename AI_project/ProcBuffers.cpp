@@ -25,6 +25,8 @@ double **out_buff;
 short **rec_out;
 short **iva_out;
 short **nmf_out;
+short **input_out;
+
 #endif
 double **Input;
 double **basis;
@@ -99,6 +101,7 @@ ProcBuffers::ProcBuffers()
 	rec_out = new short*[Nch];
 	iva_out = new short*[Nch];
 	nmf_out = new short*[Nch];
+	input_out = new short*[Nch];
 #endif
 	for (ch = 0; ch < Nch; ch++)
 	{
@@ -106,11 +109,12 @@ ProcBuffers::ProcBuffers()
 		output_temp[ch] = new double[Nwin];
 		input_temp[ch] = new double[Nwin];
 #if MAKE_FILE == 1
-		nmf_test_buff[ch] = new double[frame_shift];
+		nmf_test_buff[ch] = new double[NBufferSize];
 		out_buff[ch] = new double[NBufferSize];
-		rec_out[ch] = new short[frame_shift];
-		iva_out[ch] = new short[frame_shift];
-		nmf_out[ch] = new short[frame_shift];
+		rec_out[ch] = new short[NBufferSize];
+		iva_out[ch] = new short[NBufferSize];
+		nmf_out[ch] = new short[NBufferSize];
+		input_out[ch] = new short[NBufferSize];
 #endif
 	}
 	for (ch = 0; ch < Nch; ch++)
@@ -229,6 +233,8 @@ ProcBuffers::~ProcBuffers()
 		delete[] rec_out[ch];
 		delete[] iva_out[ch];
 		delete[] nmf_out[ch];
+		delete[] input_out[ch];
+
 #endif
 	}
 #if MAKE_FILE == 1
@@ -237,6 +243,7 @@ ProcBuffers::~ProcBuffers()
 	delete[] rec_out;
 	delete[] iva_out;
 	delete[] nmf_out;
+	delete[] input_out;
 #endif
 	delete[] Input;
 	delete[] output;
@@ -481,19 +488,19 @@ int ProcBuffers::Process(double**input, double**test2_48k)
 				m_snmf->SNMF_test(output_temp[1], nmf_test_buff[1], basis_m, basis_fn);
 				for (ch = 0; ch < Nch; ch++)
 				{
-					for (i = 0; i < frame_shift; i++)
+					for (i = 0; i < NBufferSize; i++)
 					{
 						nmf_out[ch][i] = (short)(nmf_test_buff[ch][i]);
 					}
 #if MAKE_FILE == 1
-					fwrite(nmf_out[ch], sizeof(short), frame_shift, nmf[ch]);
+					fwrite(nmf_out[ch], sizeof(short), NBufferSize, nmf[ch]);
 #endif
 				}
 
 				//frame마다 ch별 output stdout출력 2018.11.30
 				for ( i = 0; i < NBufferSize; i++)
 				{
-					cout << i << "sample : " << "ch1 = " << nmf_out[0][i] << " ch2 = " << nmf_out[1][i] << endl;
+					cout << nmf_out[0][i] << "	" << nmf_out[1][i] << endl;
 				}
 				
 				//Upsampling 16k -> 48k
@@ -530,6 +537,16 @@ int ProcBuffers::Process(double**input, double**test2_48k)
 			}
 			else
 			{
+				for (ch = 0; ch < Nch; ch++)
+				{
+					for (i = 0; i < NBufferSize; i++)
+					{
+						input_out[ch][i] = (short)(out_buff[ch][i]);
+						//frame마다 ch별 output stdout출력 2018.11.30
+						cout << input_out[0][i] << "	" << input_out[1][i] << endl;
+					}
+				}
+
 				//발화구간이 끝나는 대로 wav파일 저장
 				if (VAD_count!=0)
 				{

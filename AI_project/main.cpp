@@ -174,25 +174,10 @@ void Training()
 		//남성화자 + 잡음 basis 50 + 50 ranks, 여성화자 + 잡음 basis 50 + 50 ranks로 training한다.
 
 		n_snmf->SNMF_training(f_stack, total_stack, R_x, f_tr_out); //female data training
-
-		std::cout << "f_tr_out fin!" << std::endl;
-
 		n_snmf->SNMF_training(m_stack, total_stack, R_x, m_tr_out); //male data training
-
-		std::cout << "m_tr_out fin!" << std::endl;
-
-		n_snmf->SNMF_training(n_stack, total_stack, R_d / 2, n_tr_out);
-
-		std::cout << "n_tr_out fin!" << std::endl;
-
-		n_snmf->SNMF_training(m_stack, total_stack, R_d / 2, mn_tr_out);
-
-		std::cout << "mn_tr_out fin!" << std::endl;
-
-		n_snmf->SNMF_training(f_stack, total_stack, R_d / 2, fn_tr_out);
-
-		std::cout << "fn_tr_out fin!" << std::endl;
-
+		n_snmf->SNMF_training(n_stack, total_stack, R_d / 2, n_tr_out); //noise data training
+		n_snmf->SNMF_training(m_stack, total_stack, R_d / 2, mn_tr_out); //male noise data training
+		n_snmf->SNMF_training(f_stack, total_stack, R_d / 2, fn_tr_out); //female noise data training
 		for (i = 0; i < size_basis; i++)
 		{
 			for (j = 0; j < R_x; j++)//fmale_basis 100rank
@@ -347,9 +332,6 @@ int main(void)
 		std::cout << "Memory allocation error ... quitting!\n";
 		goto cleanup;
 	}
-
-	// Test RtAudio functionality for reporting latency.
-	std::cout << "\nStream latency = " << adac.getStreamLatency() << " frames" << std::endl;
 
 	//준비된 callback함수를 streaming 시작한다.
 	try {

@@ -63,14 +63,14 @@ SNMF::SNMF()
 	win_STFT = new double[frame_len];
 	for (i = 0; i < frame_len; i++)
 	{
-		win_STFT[i] = (1.0 - cos(2.0 * 3.14159265358979323846*(double)(i) / (frame_len))) * ((double)frame_shift / (frame_len / 2));
+		win_STFT[i] = (1.0 - cos(2.0 * 3.14159265358979323846*(double)(i) / (frame_len))) * ((double)NBufferSize / (frame_len / 2));
 		win_STFT[i] = sqrt(win_STFT[i]);
 	}
 
 	//SNMF_test
 	N_length_bound = 1;
 
-	output = new double[frame_shift];//최종출력
+	output = new double[NBufferSize];//최종출력
 	d_frame = new double[frame_len];//처리후 결과
 	x_tilde = new double[frame_len];//처리결과 쌓는 버퍼
 	for (i = 0; i < frame_len; i++)
@@ -100,15 +100,15 @@ SNMF::SNMF()
 		A_R_d[i] = new double[1];
 	}
 
-	in_mat = new double[(tr_sec * SamplingFreq - frame_len) / frame_shift*fftlen2];
+	in_mat = new double[(tr_sec * SamplingFreq - frame_len) / NBufferSize*fftlen2];
 	in_w = new double[(R_x + R_d)*fftlen2];
-	in_h = new double[(tr_sec * SamplingFreq - frame_len) / frame_shift*(R_x + R_d)];
+	in_h = new double[(tr_sec * SamplingFreq - frame_len) / NBufferSize*(R_x + R_d)];
 
 	//Training
 	TF_mag = new double *[fftlen2];
 	for (i = 0; i < fftlen2; i++)
 	{
-		TF_mag[i] = new double[(tr_sec * SamplingFreq - frame_len) / frame_shift];
+		TF_mag[i] = new double[(tr_sec * SamplingFreq - frame_len) / NBufferSize];
 	}
 
 	//Test
@@ -225,7 +225,6 @@ void SNMF::basis_stack(int total_len, double* f_stack, double* m_stack, double* 
 	char data_dir[500];
 
     //저장된 6분 24초 데이터로 basis 만들기 위한 사전 과정
-	std::cout << "reading " << sf_strs[0] << std::endl;
 	strcpy(data_dir, dir);
 	strcat(data_dir, sf_strs[0]);
 	signal_f[0] = wavread(data_dir);
@@ -236,9 +235,6 @@ void SNMF::basis_stack(int total_len, double* f_stack, double* m_stack, double* 
 	}
 	free(signal_f[0]);
 
-	printf("Finish!!\n");
-
-	std::cout << "reading " << sm_strs[0] << std::endl;
 	strcpy(data_dir, dir);
 	strcat(data_dir, sm_strs[0]);
 	signal_m[0] = wavread(data_dir);
@@ -249,9 +245,6 @@ void SNMF::basis_stack(int total_len, double* f_stack, double* m_stack, double* 
 	}
 	free(signal_m[0]);
 
-	printf("Finish!!\n");
-
-	std::cout << "reading " << n_strs[0] << std::endl;
 	strcpy(data_dir, dir);
 	strcat(data_dir, n_strs[0]);
 	signal_n[0] = wavread(data_dir);
@@ -261,9 +254,6 @@ void SNMF::basis_stack(int total_len, double* f_stack, double* m_stack, double* 
 		n_stack[sample] = signal_n[0][sample + 1] * 32768.0;
 	}
 	free(signal_n[0]);
-
-	printf("Finish!!\n");
-
 }
 
 
@@ -274,7 +264,7 @@ void SNMF::SNMF_training(double*input, int in_len, int R, double **tr_out)
 	int i, j, k, random;
 	double **TF_mag_new;
 
-	int frame_num = (in_len - frame_len) / frame_shift;
+	int frame_num = (in_len - frame_len) / NBufferSize;
 
 	double **B_DFT_init, **p_init_h, **wn_sq;
 	B_DFT_init = new double *[fftlen / 2 + 1];
@@ -285,7 +275,7 @@ void SNMF::SNMF_training(double*input, int in_len, int R, double **tr_out)
 		wn_sq[i] = new double[cluster_buff*R];
 	}
 
-	stft_fft(input, in_len, TF_mag, frame_len, frame_shift, fftlen, DCbin, win_STFT, preemph);
+	stft_fft(input, in_len, TF_mag, frame_len, NBufferSize, fftlen, DCbin, win_STFT, preemph);
 
 	non_zero_id = new int[frame_num];
 	double col_sum = 0.0;
@@ -437,9 +427,9 @@ void SNMF::SNMF_test(double*output_tmp, double*output_test, double**basis_x, dou
 	bnmf_sep_event_RT(output_tmp, d_frame, N_length_bound, basis_x, basis_n);
 
 
-	for (i = 0; i < frame_len - frame_shift; i++)
+	for (i = 0; i < frame_len - NBufferSize; i++)
 	{
-		x_tilde[i] = x_tilde[frame_shift + i];
+		x_tilde[i] = x_tilde[NBufferSize + i];
 		x_tilde[i] += d_frame[i];
 	}
 	for (; i < frame_len; i++)
@@ -447,7 +437,7 @@ void SNMF::SNMF_test(double*output_tmp, double*output_test, double**basis_x, dou
 		x_tilde[i] = d_frame[i];
 	}
 
-	for (i = 0; i < frame_shift; i++)
+	for (i = 0; i < NBufferSize; i++)
 	{
 		output_test[i] = x_tilde[i];
 	}
